@@ -46,7 +46,7 @@ See comprehensive analysis figures in [`figures/`](figures/) directory:
 - **Multi-scenario validation**: Cold, normal, and hot conditions
 - **Thermal safety**: Peak temperatures maintained below 57°C
 
-![Sample Results](figures/figure5_normal_advanced.png)
+![Sample Results](src/figures/figure5_normal_temp_advanced.png)
 *Example: Advanced system performance at normal temperature showing 250A peak current with intelligent tapering*.png)
 *Example: Advanced system performance at normal temperature showing 250A peak current with intelligent tapering*
 
