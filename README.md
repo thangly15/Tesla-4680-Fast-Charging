@@ -37,7 +37,7 @@ See comprehensive analysis figures in [`figures/`](figures/) directory:
 - **Multi-scenario validation**: Cold, normal, and hot conditions
 - **Thermal safety**: Peak temperatures maintained below 57°C
 
-![Sample Results](figures/## Key Results Visualization
+![Sample Results](src/figures/##) Key Results Visualization
 
 See comprehensive analysis figures in [`figures/`](figures/) directory:
 
