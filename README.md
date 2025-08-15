@@ -31,7 +31,6 @@ This repository contains the simulation code and results for our research on enh
 ## Repository Contents
 
 - `src/matlab/` - MATLAB simulation scripts
-- `src/simulink/` - Simulink battery pack models  
 - `src/data/` - Simulation parameters and results
 - `src/figures/` - All paper figures and visualizations
 - `src/docs/` - Setup and usage documentation
