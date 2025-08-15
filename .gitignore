@@ -1,0 +1,19 @@
+# MATLAB files
+*.asv
+*.mat
+*.fig
+*.p
+*.mex*
+slprj/
+*.slxc
+
+# Simulink files
+*.autosave
+*.original
+
+# Cache files
+*.cache
+
+# OS generated files
+.DS_Store
+Thumbs.db
