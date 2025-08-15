@@ -89,9 +89,7 @@ Comprehensive results summary available in [`src/data/`](src/data/):
 - Statistics and Machine Learning Toolbox
 
 ### Running the Simulation
-```matlab
-cd src/matlab
-run main_simulation.m
+Download the MATLAB file from [Matlab](src/matlab/)
 
 ## Status
 
