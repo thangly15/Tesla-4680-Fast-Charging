@@ -1,21 +1,26 @@
 # Setup Instructions
 
-## System Requirements
+## Requirements
 
-### Software Requirements
-- **MATLAB R2025a or later** (required)
-- **Simscape Electrical Toolbox** (required)
-- **Statistics and Machine Learning Toolbox** (recommended)
-- **Parallel Computing Toolbox** (optional, for faster simulation)
+- **MATLAB R2025a or later**
+- **Simscape Electrical toolbox**  
+- **Statistics and Machine Learning Toolbox**
 
-### Hardware Requirements
-- **RAM**: Minimum 8GB, recommended 16GB+
-- **Storage**: At least 2GB free space
-- **CPU**: Multi-core processor recommended for faster simulation
+## Installation
 
-## Installation Steps
+### 1. Download the Code
+- **Download ZIP** from GitHub repository, OR
+- **Clone repository**: `git clone https://github.com/thangly15/Tesla-4680-Fast-Charging.git`
 
-### 1. Clone Repository
-```bash
-git clone https://github.com/yourusername/tesla-4680-fast-charging.git
-cd tesla-4680-fast-charging
+### 2. Extract and Open MATLAB
+1. **Extract ZIP file** to your desired location
+2. **Open MATLAB**
+3. **Navigate to the code folder**:
+   - Click "Browse for Folder" in MATLAB
+   - Go to: `downloaded-folder/src/matlab/`
+   - Click "Select Folder"
+
+### 3. Run Simulation
+```matlab
+% In MATLAB Command Window, type:
+Tesla4680_three_cases_Scenario_test
