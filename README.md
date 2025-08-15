@@ -28,6 +28,14 @@ This repository contains the simulation code and results for our research on enh
 - **Thermal safety analysis:** Comprehensive temperature management
 - **Energy economics:** Quantified preheating return on investment
 
+## Repository Contents
+
+- `src/matlab/` - MATLAB simulation scripts
+- `src/simulink/` - Simulink battery pack models  
+- `src/data/` - Simulation parameters and results
+- `src/figures/` - All paper figures and visualizations
+- `src/docs/` - Setup and usage documentation
+
 ## Key Results Visualization
 
 See comprehensive analysis figures in [`figures/`](figures/) directory:
@@ -50,13 +58,9 @@ See comprehensive analysis figures in [`figures/`](figures/) directory:
 *Example: Advanced system performance at normal temperature showing 250A peak current with intelligent tapering*.png)
 *Example: Advanced system performance at normal temperature showing 250A peak current with intelligent tapering*
 
-## Repository Contents
+## Source Code
 
-- `src/matlab/` - MATLAB simulation scripts
-- `src/simulink/` - Simulink battery pack models  
-- `data/` - Simulation parameters and results
-- `figures/` - All paper figures and visualizations
-- `docs/` - Setup and usage documentation
+The complete simulation is available in [`src/matlab/`](src/matlab/):
 
 ## Quick Start
 
