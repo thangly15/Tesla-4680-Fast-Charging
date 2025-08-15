@@ -89,7 +89,7 @@ Comprehensive results summary available in [`src/data/`](src/data/):
 - Statistics and Machine Learning Toolbox
 
 ### Running the Simulation
-Download the MATLAB file from [Matlab](src/matlab/)
+Download the MATLAB file from [Matlab](src/matlab/Tesla4680_three_cases_Scenario_test.m)
 
 ## Status
 
