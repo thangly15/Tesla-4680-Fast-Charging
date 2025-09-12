@@ -1,0 +1,934 @@
+\documentclass[conference]{IEEEtran}
+\usepackage{cite}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{multirow}
+\usepackage{float}
+\usepackage{subcaption}
+
+\usepackage{siunitx}
+\usepackage{amssymb}
+\usepackage{adjustbox}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+\IEEEoverridecommandlockouts 
+\makeatletter
+\def\ps@headings{%
+\def\@oddhead{\mbox{}\scriptsize\rightmark \hfil \thepage}%
+\def\@evenhead{\scriptsize\thepage \hfil \leftmark\mbox{}}%
+\def\@oddfoot{}\def\@evenfoot{}}
+
+\makeatother
+\title{Enhanced Current Control and Preheating System for Tesla 4680 Battery Fast Charging: Multi-Temperature Performance Analysis and Energy Efficiency Validation}
+
+\author{
+    \IEEEauthorblockN{Thang Quoc Ly}
+    \IEEEauthorblockA{
+        Department of Physics\\
+        Grinnell College\\
+        Grinnell, Iowa, United States\\
+        Email: lytimmy@grinnell.edu
+    }
+}
+\begin{document}
+
+\maketitle
+%----------------------------------------------------------
+% ABSTRACT AND KEYWORDS
+%----------------------------------------------------------
+
+\begin{abstract}
+
+Electric vehicles (EVs) face obstacles limiting broader adoption, particularly prolonged charging times and thermal safety concerns during fast charging. This study develops an enhanced electrothermal simulation framework for lithium-ion battery packs using Tesla 4680-based configuration, integrating adaptive current control with temperature-dependent derating, state-of-charge (SOC) tapering, and cold-weather preheating. Implemented in MATLAB/Simulink, the model evaluates performance under cold ($-10^\circ$C), moderate ($25^\circ$C), and hot ($40^\circ$C) conditions. Results show up to 2,430\% increase in SOC gain compared to baseline control while maintaining peak temperatures below $60^\circ$C. The framework demonstrates potential to significantly reduce EV charging times and enhance battery longevity across climates.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Battery simulation, electric vehicle, fast charging, lithium-ion battery, Tesla 4680, temperature-based modeling, current control, thermal management.
+\end{IEEEkeywords}
+
+\section{\textbf{Introduction}}
+
+ With global efforts to reduce transportation emissions, replace fuel with green energy, and achieve carbon net-zero, electric vehicles (EVs) are rapidly popping up in major cities worldwide. As a result, EV registrations are increasing yearly, as shown in Fig. 1 \cite{iea2025global}. Furthermore, 36 new EVs are projected to launch in the US only over the next 18 months as EV sales continue to surge \cite{jordhamo2025ev}. However, many people still prefer gas-powered vehicles due to the high pricing on EVs, and consumers' habit, as they are more used to gas-powered vehicles and are not open to trying EVs yet. Nevertheless, the most significant barrier to consumer acceptance that EVs face is that the charging takes too long. While conventional gas-powered vehicles can pump gas quickly, EV charging can take a longer time to charge. The prolonged charging time is very inconvenient, especially while on road trips. Therefore, addressing the charging time issues in EVs has increased the demand for faster and more efficient charging solutions. This is where DC fast-charging technology (DCFC) steps in \cite{threewitt2025reasons}.  
+ 
+ \begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{global-electric-car-sales-2014-2024.png}
+    \caption{Global Electric Car Sales (2014-2024)}
+    \label{fig:enter-label}
+\end{figure}
+
+While most EV recharging takes place at private residences when vehicles are parked overnight, DCFCs are intended for people who lack reliable access to charging at home or work, to support long-distance travel, and to ease range anxiety. They give EV drivers a sense of freedom and convenience similar to what they are used to with gasoline vehicles \cite{MURATORI2019109235}. For example, modern Tesla supercharger systems can add up to 200 miles in 15 minutes and deliver a max charging rate of 350 kW. \cite{tesla2025charging}. However, these high-power charging techniques come with considerable thermal management challenges, as excessive heat generation can lead to accelerated battery aging, reducing battery capacity, and potential safety hazards, including thermal runaway \cite{batteries10100372}.  Furthermore, simultaneous operation of multiple high-power chargers can impose significant loads on electricity distribution networks, potentially requiring costly infrastructure upgrades \cite{DOE2024EVGridImpact}. The relationship between charging current, temperature, and battery performance is complex and highly nonlinear, and this causes fluctuations within the charging rate, issues with lithium plating, and thermal issues. Therefore, sophisticated control algorithms are required to optimize charging speed while maintaining thermal safety margins \cite{app14114728}. Therefore, developing charging control strategies that minimize thermal stress, preserve battery health, and mitigate grid impacts is critical to enabling sustainable large-scale EV adoption.
+
+According to \cite{klender2020tesla}, Tesla's introduction of the 4680 cylindrical lithium-ion cell represents a significant advancement in EV battery technology, featuring a tableless electrode design that promises improved thermal management and faster charging capabilities compared to previous generations. The larger format (46mm diameter, 80mm height) provides higher energy density while the structural battery pack integration eliminates traditional modules, reducing system complexity and cost. However, the thermal characteristics of these large-format cells under fast-charging conditions require detailed investigation, as the higher energy requirements and rapid charging aggravate thermal gradients within the cell and pose significant safety and performance challenges \cite{LEI2024132629}.
+
+Current battery management systems rely on conservative charging profiles prioritizing safety over performance, often restricting fast charging speeds below room temperature, especially under extreme conditions like subzero temperature \cite{RAHMANI2025235827}. Cold weather operation presents particular challenges, as low temperatures significantly limit charging current acceptance by increasing the resistance. Subzero temperatures lead to slower diffusion and intercalation with the possibility of lithium plating \cite{TOMASZEWSKA2019100011}. On the other hand, fast-charging protocols in hot weather conditions require aggressive thermal protection to prevent overheating of the battery because, according to \cite{dai2023research}, "The frequent use of excessive current charging will make the high-speed movement of lithium ions in the process of generating a large amount of heat, resulting in a sharp rise in battery temperature. Overheating of the battery makes the lithium ion in the charging process, which may be too late to complete the negative electrode embedding, thereby affecting the cycle life of the battery. At the same time, continuous overheating of the battery can also cause the risk of spontaneous combustion or explosion of lithium-ion batteries". A recent study of Tesla 4680 cells revealed that the cooling process faces challenges due to the lower surface-volume ratio than other smaller cylindrical cells \cite{ank2023lithium}. Therefore, the 4680 battery requires robust cooling systems and a more advanced current control system to optimize its high power output while managing thermal gradients efficiently to ensure safe and well-performed fast-charge operations in EVs. 
+
+While the real 4680 Tesla battery is costly and difficult to obtain, its simulation-based analysis provides an alternative tool for investigating its thermal behavior under various operating conditions without the risks and costs associated with physical testing. MATLAB/Simulink offers sweeping battery modeling capabilities through its Simscape Battery toolbox and example models. Specifically, this research adapts the "Battery Pack DC Fast Charging" model from the MATLAB/Simulink R2025a example model library (Fig. 2) \cite{mathworks_lithium_pack}. Enabling detailed and accurate electrothermal analysis of complex battery systems like Tesla 4680. However, the default charging profiles in this simulation environment lack the complexity required to accurately represent realistic modern adaptive charging algorithms employed in EV systems.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{Matlab_Model.png}
+    \caption{MATLAB/Simulink R2025a "Battery Pack DC Fast Charging" model}
+    \label{fig:enter-label}
+\end{figure}
+The original battery cell simulation provided by MATLAB/Simulink helped build the battery cell structure and connections, but it exhibits some limitations that need to be addressed to model the Tesla 4680 battery cell realistically. Specifically, the original current profile of the model only generated around 4-47A charging currents, which is far below the 200-250A range of typical fast charging applications \cite{sawant} \cite{MASTOI202211504}. Furthermore, the original model lacks temperature-dependent derating mechanisms, preheating logic in cold weather simulation, and realistic state-of-charge (SOC) tapering that reflects EV's actual charging curves for safety limitations \cite{TOMASZEWSKA2019100011}. These simulation outputs fail to align with published Tesla Model Y 4680 performance data. Therefore, this simulation needed the development of enhanced current control algorithms with working temperature derating factors and SOC tapering profiles to achieve realistic charging behaviors across different thermal operating conditions.
+
+This paper presents an enhanced electrothermal simulation framework for Tesla 4680 battery pack DC fast charging. A realistic temperature-dependent current control algorithm was developed and validated against published performance data. This research focuses on developing an accurate Tesla 4680 battery performance simulation that captures realistic charging behavior across different harsh temperature conditions, from extreme cold (-10°C with preheating) to high summer temperatures (40°C). The contributions of this work include the development of aggressive temperature derating factors based on real Tesla charging behavior, implementing realistic state-of-charge tapering profiles, and comprehensive validation of the simulation results against published Tesla Model Y 4680 performance data to ensure the framework accurately represents actual vehicle charging characteristics.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{Tesla-4680.png}
+    \caption{Tesla 4680 Battery Cell side-by-side comparison with previous models \cite{nigel2022tesla}}
+    \label{fig:enter-label}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{Tesla-4680-Battery-cell.png}
+    \caption{Tesla 4680 Battery Cell's performance as advertised by Tesla \cite{lambert2023tesla}}
+    \label{fig:enter-label}
+\end{figure}
+
+
+
+\section{\textbf{Methodology}}
+
+\subsection{\textbf{Assumptions \& Approach}}
+The enhanced electrothermal simulation framework is based on the Tesla 4680 cylindrical lithium-ion battery cell, a significant advancement in large-format battery technology. The 4680 cell designation indicates a diameter of 46mm and height of 80mm, providing a cell volume of approximately 0.133 liters and a mass of 355g per cell \cite{ALLGAUER2025117318}. Based on teardown analysis and published specifications, each Tesla 4680 cell has a nominal capacity of 26.5Ah with a nominal voltage of 3.7V, utilizing NMC811 cathode chemistry (approximately 80-90\% nickel content) and a graphite anode without silicon, manufactured using Tesla's dry electrode process \cite{nigel2022tesla} \cite{ank2023lithium}. 
+
+The electrochemical cell parameters are characterized through comprehensive lookup tables spanning operational temperature and state-of-charge ranges, which implements a physics-informed equivalent circuit composed of an open-circuit voltage source $V_0$mat, a series resistance $R_0$mat, and two parallel RC branches $(R_1,\tau_1)$mat and $(R_2,\tau_2)$mat to emulate transient polarization and diffusion dynamics, respectively. 
+
+
+\subsubsection{\textbf{Open-Circuit Voltage: Thermodynamic Behavior}}
+
+The open-circuit voltage ($V_0$mat) matrix represents the cell's equilibrium potential when the potential difference between two electrodes is under equilibrium (no current flow), as a function of SOC and temperature. The cell's equilibrium potential is supposedly obtained from potentiostatic measurements and derived from the approximation of the Nernst equation in thermodynamics \cite{mit2014equilibrium}:
+
+
+\begin{equation}
+V_{\text{0}} = V^\theta + \frac{kT}{ne} \ln \left(\frac{a_{\text{cell reactants}}}{a_{\text{cell products}}} \right)
+\end{equation}
+
+\begin{itemize}
+    \item $V_{\text{0}}$: The open-circuit voltage (OCV) of the cell
+    \item $V^\theta$: The standard electrode potential (at STP)
+    \item $k$: Boltzmann constant (1.38 x $10^{-23}$ J/K)
+    \item $T$: Temperature (Kelvin)
+    \item $n$: The number of electrons transferred per redox reaction
+    \item $e$: Elementary charge (1.602 x $10^{-19}$ C)
+    \item $a_{\text{cell reactants}}$: Activity of chemical species in reactants of the cell reaction
+    \item $a_{\text{cell products}}$: Activity of chemical species in products of the cell reaction
+\end{itemize}
+
+Due to time constraints and limited access to experimentally collected data, the $V_{\text{0}}$ matrix values in this study were sourced from published datasets of Tesla 4680 cell OCV \cite{aboutenergy2023tesla} and the lithium-ion battery OCV data \cite{peng2022parameter}. Then, $V_{\text{0}}$mat was slightly adjusted to simulate cell-to-cell variations due to manufacturing differences. This aligns with the original MATLAB/Simulink model's $V_{\text{0}}$ matrix, ensuring numerical stability and smoother simulation performance.
+
+\begin{table}[H]
+\centering
+\caption{Cell's equilibrium potential as a function of SOC and Temperature}
+\begin{tabular}{|c|c|c|}
+\hline
+\textbf{$V_0$mat(SOC, T)} & \textbf{SOC} & \textbf{Temp (Kelvin)} \\
+\hline
+3.00, 3.05, 3.10 & 0\% & $273.15^\circ$K, $298.15^\circ$K, $323.15^\circ$K\\
+3.55 3.57, 3.59  & 25\% & $273.15^\circ$K, $298.15^\circ$K, $323.15^\circ$K \\
+3.98, 4.00, 4.02 & 75\% & $273.15^\circ$K, $298.15^\circ$K, $323.15^\circ$K \\
+4.18, 4.20, 4.22 & 100\% & $273.15^\circ$K, $298.15^\circ$K, $323.15^\circ$K  \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{\textbf{Series Resistance: Ohmic Conduction}}
+
+
+ The series resistance ($R_0$mat) accounts for the instantaneous ohmic losses governed by the effects of electrolyte conductivity and electronic conduction theory \cite{xie2020facile}, modeled by Ohm's Law:
+
+ 
+\begin{equation}
+V = I \cdot R
+\end{equation}
+
+\begin{itemize}
+    \item $V$: Voltage (V)
+    \item $I$: Current (A)
+    \item $R$: Resistance (\si{\ohm})
+    \end{itemize}
+
+The estimation of $R_O$ can be made by adopting Ohm's Law, where resistance is calculated using the instantaneous voltage drop at the onset of a current pulse presented by \cite{mondal}:
+
+\begin{equation}
+R_0 =\frac{\Delta v_t(k)}{\Delta i_{\text{cell}}(k)}
+\end{equation}
+
+\begin{itemize}
+    \item  $R_0$ is the ohmic resistance of the battery cell (\si{\ohm})
+    \item $\Delta v_t(k)$ is the instantaneous change in terminal voltage [V] at time index $k$ after a current pulse
+    \item $\Delta i_\text {cell}(k)$ is the step change in input current [A] applied to the battery at index $k$
+\end{itemize}
+
+
+To model the instantaneous voltage drop and internal resistive losses during DC fast charging, the ohmic resistance matrix ($R_0$mat) was developed specifically for the Tesla 4680 cylindrical cell as a function of temperature (T) and state of charge (SOC). The $R_0$mat was defined as a lookup table. The values of $R_0$ ranged from 1.5 m\si{\ohm} to 3.5 m\si{\ohm}, decreasing toward the mid-SOC region and increasing again at high and low SOC extremes. This U-shaped SOC dependency reflects the well-documented behavior of lithium-ion cells and was informed by HPPC-based experimental results in \cite{Wang} and \cite{mondal}. These measurements show that $R_0$ typically decreases near the middle SOC level and increases at the extremes of SOC values, reflecting internal electrochemical limitations, which are reflected in this paper's model to improve accuracy under dynamic operating conditions.
+
+In contrast, MATLAB's default Battery (Table-Based) block provides only generic resistance interpolation, assuming linear or idealized behavior that fails to capture realistic nonlinearities across SOC and temperature. To address this, the $R_0$mat used in the model was interpolated across the entire SOC and temperature range based on previous studies and published data, and then adjusted to ensure numerical stability and continuity within the Simulink environment. This refinement is significant for modeling fast charging scenarios, where variations in internal resistance can significantly affect thermal behavior, charge acceptance, and safety limits.
+
+
+\begin{table}[H]
+\centering
+\caption{Series Resistance $R_0$ as a Function of SOC and Temperature}
+\begin{tabular}{|c|c|c|}
+\hline
+\textbf{$R_0$mat(SOC, T)} & \textbf{SOC} & \textbf{Temp (Kelvin)} \\
+\hline
+0.0035, 0.0030, 0.0025 & 0\% & $273.15^\circ$K, $298.15^\circ$K, $323.15^\circ$K\\
+0.0025, 0.0020, 0.0018 & 25\% & $273.15^\circ$K, $298.15^\circ$K, $323.15^\circ$K \\
+0.0020, 0.0018, 0.0015 & 75\% & $273.15^\circ$K, $298.15^\circ$K, $323.15^\circ$K \\
+0.0022, 0.0020, 0.0018 & 100\% & $273.15^\circ$K, $298.15^\circ$K, $323.15^\circ$K  \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection {\textbf{RC Network Parameters ($R_!$, $R_2$, $\tau_1$, $\tau_2$)}}
+
+In this model, to capture the dynamic electrochemical behavior, such as the voltage response of the lithium-ion battery under DC fast charging conditions, two RC pairs were introduced in the battery model through the parameters $R_1$, $\tau_1$, $R_2$, $\tau_2$. Each RC characterizes different electrochemical processes within the cell: (1) the first RC pair ($R_1$, $\tau_1$) accounts for polarization due to charge-transfer kinetics, while (2) the second pair ($R_2$, $\tau_2$) captures diffusion-related limitations within the electrode and electrolyte materials.
+
+\paragraph{\textbf{Polarization Branch ($R_1$, $\tau_1$)}}
+The first resistor-capacitor (RC) branch models the charge-transfer polarization at the electrode-electrolyte interface. This polarization arises from the separation of charge when charge is transferred and stored in the electrical double-layer capacitor \cite{SOAVI20201}, accumulating ions and electrons on either side of the interface, causing a voltage build-up (overpotential) across the interface \cite{sudhakar2018biopolymer}. This process can be understood using the Butler–Volmer reaction model, which relates the current density to this overpotential and captures the nonlinear behavior of the electrode kinetics \cite{MARSHALL201875}:
+
+\begin{equation}
+    i = -i_0 \left[ \exp\left( \frac{ \alpha_n F \eta }{RT} \right) - \exp\left( -\frac{ (1- \alpha_n) F \eta }{RT} \right) \right]
+\end{equation}
+
+\begin{itemize}
+  \item \( i \): net current density [A/m\(^2\)]
+  \item \( i_0 \): exchange current density [A/m\(^2\)]
+  \item \( \eta \): overpotential [V]
+  \item \( \alpha_n \): anodic and cathodic charge transfer coefficients
+  \item \( F \): Faraday’s constant (96485 C/mol)
+  \item \( R \): universal gas constant (8.314 J/mol $\cdot$ K)
+  \item \( T \): temperature [K]
+\end{itemize}
+
+As more charge accumulates, the resulting polarization influences the rate of electrochemical reactions, directly affecting the internal resistance. This helps explain its variation with the state of charge (SOC) and temperature. The time constant $\tau_1$ = $R_1$$C_1$ reflects the battery's short-term voltage response to the dynamic current input. Based on published data from EIS and HPPC tests, the selected $R_1$ values (1.0–2.0 m\si{\ohm}) and $\tau_1$ values (10–30s). These numbers were scaled down to fit in the model battery cell, but also ensured that they fall within typical ranges reported for Nickel Manganese Cobalt-based lithium-ion battery cells \cite{mondal} \cite{Wang}.
+
+\paragraph{\textbf{Diffusion-Limitations ($T_2$, $\tau_2$)}}
+
+The second RC branch ($R_2$, $\tau_2$) approximates the delayed voltage relaxation associated with solid-state lithium diffusion and electrolyte concentration polarization. These transport-limited dynamics are not directly modeled through the DC battery fast charge model. Still, they are captured through parameterized time constants, which simulate the slower physical processes limiting charge equilibrium after high-current pulses. \cite{katzenmeier2023mass} describe this phenomenon in the context of solid-state electrolytes, stating: "The charge transfer between the Li(0) and the SSE, forming a space charge layer (SCL) at the interface... can cause significant changes to the local concentration of mobile Li-ions in the SSE, leading to increased interfacial resistance" (p. 2).
+In this study, the parameter values adopted, $R_2$ = 0.6 $-$ 1.5 m\si{\ohm} and $\tau_2$ = 200 $-$ 800s, are not direct experimental fits, but are adopted and approximated from published trends in \cite{Wang}, then tuned to ensure smooth convergence within MATLAB's simulation framework. These values remain within physically justifiable bounds for high-rate lithium-ion cells. Furthermore, they represent long-time-scale dynamics relevant to voltage recovery, thermal delay, and state-of-charge estimation under fast-charging conditions. As \cite{katzenmeier2023mass} further notes: "Increasing SCL resistance when a potential is applied indicates a lower ionic conductivity due to missing charge carriers" (p. 4), underscoring the practical relevance of incorporating such transport-related elements in modeling frameworks.
+
+\paragraph{\textbf{Approach}} The approach for this model was outlined by \cite{mondal}. This study uses a two-RC model where resistances and time constants vary with state of charge (SOC) and temperature. While \cite{mondal} describes the fitting methodology using EIS data and MATLAB-based parameter identification, they do not provide specific numerical values. Therefore, SOC‑ and temperature‑dependent parameter values—including $R_1$, $\tau_1$, $R_2$, $\tau_2$ were adopted from \cite{Wang}, which presents full HPPC and EIS-derived parameter datasets for NMC-based lithium-ion cells. Furthermore, although the parameter values for $R_1$, $\tau_1$, $R_2$, $\tau_2$ were translated from published EIS-based studies, the final values used in the simulation were carefully tuned to align with the behavioral trends observed in MATLAB's original Battery (Table-Based) block. This calibration ensures numerical stability, improved convergence, and realistic dynamic response during fast charging scenarios. By preserving the empirical patterns, such as the U-shaped dependence of resistance on SOC and the nonlinear decrease of time constants with rising temperature, the modified values retain realistic data while enhancing the computational smoothness of the model in the Simulink environment.
+
+\begin{table}[H]
+\centering
+\caption{$R_1$ and $\tau_1$ values adopted and scaled to fit the simulation at Temp ($273.15^\circ$K, $298.15^\circ$K, $323.15^\circ$K)}
+\begin{tabular}{|c|c|c|}
+\hline
+\textbf{$R_1$mat(SOC, T)} & \textbf{$\tau_1$mat(SOC, T) (s)} & \textbf{SOC} \\
+\hline
+0.0020, 0.0018, 0.0015 & 30, 25, 20 & 0\%\\
+0.0018, 0.0015, 0.0012 & 25, 20, 15 & 25\% \\
+0.0015, 0.0012, 0.001 & 20, 15, 10 & 75\%\\
+0.0018, 0.0015, 0.0012 & 25, 20, 15 & 100\% \\
+\hline
+\end{tabular}
+\end{table}
+
+
+\begin{table}[H]
+\centering
+\caption{$R_2$ and $\tau_2$ values adopted and scaled to fit the simulation at Temp ($273.15^\circ$K, $298.15^\circ$K, $323.15^\circ$K)}
+\begin{tabular}{|c|c|c|}
+\hline
+\textbf{$R_2$mat(SOC, T)} & \textbf{$\tau_2$mat(SOC, T) (s)} & \textbf{SOC}\\
+\hline
+0.0015, 0.0012, 0.0010 & 800, 600, 400 & 0\% \\
+0.0012, 0.0010, 0.0008 & 600, 450, 300 & 25\% \\
+0.0010, 0.0008, 0.0006 & 400, 300, 200 & 75\% \\
+0.0012, 0.0010, 0.0008 & 500, 400, 300 & 100\%\\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{\textbf{Simulation Setup}}
+\paragraph{\textbf{Module Electrical}}
+The simulation implements a Tesla Model Y-inspired battery pack structure, with 130 lithium-ion cells to match the original battery cell format provided by MATLAB/Simulink. It is divided into three thermally and electrically distinct modules:
+
+\begin{itemize}
+    \item Module A: 20s2p, 40 cells, external resistance = 0.8 m\si{\ohm}
+    \item Module B: 20s2p, 40 cells, external resistance = 1.0 m\si{\ohm}
+    \item Module C: 25s2p, 50 cells, external resistance = 1.2 m\si{\ohm}
+\end{itemize}
+
+Together, the pack forms a 65s6p configuration. Next, assuming each 4680 lithium-ion cell has a nominal voltage of 3.7V \cite{nigel2022tesla}, the nominal pack voltage is calculated as:
+\[
+V_{\text{nominal}} = N_{\text{series}} \times V_{\text{cell}} = 65 \times 3.7 = \boxed{240.5~\text{V}}
+\] 
+
+Then, using \cite{nigel2022specific} data for the Tesla 4680 battery cell, each cell has a capacity of 26.5 Ah, and since each module contains two cells in parallel, the effective module capacity is:
+\[
+\text{Capacity}_{\text{module}} = 2 \times 26.5~\text{Ah} = \boxed{53~\text{Ah}}
+\]
+Since the modules are connected in series, the total pack capacity remains the same as that of one module, 53Ah. This configuration (65s2p overall) yields a total energy capacity of:
+\[
+E_{\text{pack}} = V_{\text{nominal}} \times \text{Capacity} = 240.5~\text{V} \times 53~\text{Ah} = \boxed{12.74~\text{kWh}}
+\]
+This aligns well with the nominal energy 86.5Wh in the Tesla 4680 cell \cite{nigel2022tesla}. This would lead to the pack energy:
+\[
+E_{\text{pack}} = 130~\text{cells} \times 86.5~\text{Wh} = \boxed{11.25~\text{kWh}}
+\]
+And 12.74k Wh $\approx$ 11.25 kWh, therefore, this configuration can reflect a realistic pack-level design that contains realistic module electrical seen in commercial long-range electric vehicles using Tesla's 4680 cylindrical cell platform. 
+
+\paragraph{\textbf{Cell thermal properties}}
+
+Furthermore, to ensure numerical stability and physical accuracy, the battery modules are assigned realistic physical properties provided by \cite{nigel2022tesla}. Each module is also assigned distinct thermal properties, heat generation profiles, and minor random variations in initial SOC and temperature to replicate manufacturing tolerances. The properties of the battery are aimed to be as realistic as possible. However, there is no published data on the heat transfer coefficient and thermal conductivity of the Tesla 4680 battery cell. Therefore, the value of the cell's thermal conductivity (K\_Cell = 1.2 W/m$\cdot$K) was adopted from real lithium-ion batteries like the 18,650 \cite{JIANG2023108516}. Moreover, the convective heat transfer coefficient (h\_Cell = 15 W/($m^2$$\cdot$K)) was selected based on recent experimental studies of the lithium-ion batteries, which validate natural convection coefficients in the range of 5-30 W/($m^2$$\cdot$K) for Tesla's cylindrical battery cells under ambient conditions \cite{guan2022internal}. This value represents moderate natural convection conditions typical subzero thermal management scenarios.
+
+\begin{table}[H]
+\centering
+\caption{Tesla 4680 Battery Module Physical Properties}
+\begin{tabular}{|c|c|c|}
+\hline
+\textbf{Cell Height (m)} & \textbf{Cell Width (m)} & \textbf{Cell Thickness (m)}\\
+\hline
+0.080 & 0.046 & 0.080\\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Tesla 4680 Battery ModSimscape's Properties}
+\begin{tabular}{|c|c|}
+\hline
+\textbf{K\_Cell (W/m$\cdot$K)} & \textbf{h\_Cell (W/$m^2$$\cdot$K)}\\
+\hline
+1.2 & 15\\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{\textbf{Cell Thermal Modeling}}
+
+The thermal behavior of each Tesla 4680 lithium-ion cell follows the lumped parameter approach implemented in the original MATLAB/Simulink battery model. The key modification for Tesla 4680 cell characterization involves the thermal mass parameter MdotCp, which represents the cell's thermal capacitance.
+
+\textbf{Thermal Mass Parameter: $MdotC_p$}:
+The thermal mass parameter $MdotC_p$ is defined as the product of the cell mass and the specific heat capacity \cite{Hu}:
+
+\begin{equation}
+MdotC_p = m \cdot C_p = \rho V c_p 
+\end{equation}
+
+This parameter determines how quickly the cell temperature responds to heat inputs. Higher thermal mass provides greater thermal inertia and slower temperature changes, which is critical to preventing thermal runaway during fast charging.
+
+For the Tesla 4680 cylindrical cell geometry with a diameter of 46 mm and a height of 80 mm (\tableautorefname{V}), the cell volume is:
+
+\begin{equation}
+    V_\text{cell} = \pi r^2 h = \pi  \cdot (0.023)^2 \cdot (0.08) \approx 1.33 \cdot 10^{-4}  m^3
+\end{equation}
+
+Using material properties representative of lithium-ion cells, the thermal mass calculation employs:
+\begin{itemize}
+    \item Density ($\rho$) = 2500 kg/$m^3$, based on lithium-ion battery models measurements for similar cell chemistry \cite{kim2020optimization}
+    \item specific heat capacity ($c_p$)  = 1170 J/(kg·K)  within the validated range of 830-1130 J/(kg·K) for cylindrical lithium-ion batteries \cite{nigel2022specific}
+\end{itemize}
+
+The thermal mass is calculated as:
+
+\begin{equation}
+    MdotC_p = 2500 ×1.33×10^{-4}×1170=390 J/K
+\end{equation}
+
+This value represents a calibration from the original model's default value of 500 J/K to reflect the specific thermal characteristics of the Tesla 4680 cell format, based on validated experimental measurements of similar cylindrical cells mentioned above. 
+
+\section{\textbf{Experimental}}
+The experimental validation is conducted using MATLAB/Simulink R2025a with the Simscape Electrical toolbox. Three distinct experimental scenarios are designed to evaluate the thermal management system's effectiveness and charging performance under varying ambient conditions. Preheating is selectively applied only for cold weather conditions to assess its impact on charging efficiency and to mirror the battery's realistic behavior.
+
+\subsection {\textbf{Temperature Scenarios and Test Matrix}}
+
+Three ambient temperature conditions are evaluated through the \textit{temp$\_$scenario} parameter to represent realistic operating environments:
+
+\begin{verbatim}
+%% SELECT TEMPERATURE SCENARIO
+temp_scenario = ...;  % 1=Cold(-10°C), 
+2=Normal(25°C), 3=Hot(40°C).
+
+ENABLE_PREHEAT = true; % Preconditioning: 
+true=enabled (realistic),
+false=disabled (test cold start)    
+\end{verbatim}
+
+\textbf{Defined Temperature Points:}
+\begin{itemize}
+    \item \textbf{Case 1 - Cold Scenario}: $-10^oC$(263.15 K) - Winter charging conditions
+    \item \textbf{Case 2 - Normal Scenario}: $25^oC$ (298.15 K) - Moderate ambient conditions
+    \item \textbf{Case 3 - Hot Scenario}: $40^oC$ (313.15 K) - Summer high temperature operation
+\end{itemize}
+
+\textbf{Preheating Configuration:}
+The preheating system can be enabled/disabled via the \textit{ENABLE$\_$PREHEAT} flag, providing flexibility to study both scenarios:
+
+\begin{itemize}
+    \item \textbf{ENABLE$\_$PREHEAT = true}: Realistic operation with thermal conditioning
+    \item \textbf{ENABLE$\_$PREHEAT = false}: Cold-start testing without preconditioning
+\end{itemize}
+
+This results in a total of 4 distinct experimental configurations:
+\begin{enumerate}
+    \item Cold without preheating (temp$\_$scenario=1, ENABLE$\_$PREHEAT=false)
+    \item Cold with preheating (temp$\_$scenario=1, ENABLE$\_$PREHEAT=true)
+    \item Normal operation (temp$\_$scenario=2, ENABLE$\_$PREHEAT=true/false - no effect)
+    \item Hot operation (temp$\_$scenario=3, ENABLE$\_$PREHEAT=true/false - no effect)
+\end{enumerate}
+
+\subsection{\textbf{Preheating Logic Implementation}}
+
+The preheating system follows an automated threshold-based activation strategy with the following parameters:
+
+\begin{verbatim}
+
+%% Temperatures Setup
+T_COLD  = 263.15;           % -10°C
+T_NORMAL = 298.15;          % 25°C
+T_HOT   = 313.15;           % 40°C
+PREHEAT_TARGET = 288.15;    % 15°C
+PREHEAT_POWER = 6000;       % 6 kW heater
+HEATING_RATE_K_PER_MIN = 3.0;
+HEATING_RATE = HEATING_RATE_K_PER_MIN / 60;
+
+%% TEMPERATURE SCENARIO MODIFICATIONS
+switch temp_scenario
+    case 1  % COLD (-10°C)
+        ambient = T_COLD; % -10°C
+        
+    case 2  % NORMAL (25°C)
+        ambient = T_NORMAL; % 25°C
+        
+    case 3  % HOT (40°C)
+        ambient = T_HOT; % 40°C
+end
+
+%% Preheating system
+if ENABLE_PREHEAT && ambient < PREHEAT_TARGET
+    cellInitialTemp = PREHEAT_TARGET;  
+    temp_rise = PREHEAT_TARGET - ambient;
+    preheat_time_min =
+    temp_rise / HEATING_RATE_K_PER_MIN; 
+    preheat_energy_kWh =
+    PREHEAT_POWER * preheat_time_min * 60 / 3600;
+    auxLoad = auxLoad + 1000;
+    preheat_applied = true;
+    
+else
+    cellInitialTemp = ambient;
+    preheat_applied = false;
+    preheat_time_min = 0;
+    preheat_energy_kWh = 0;
+end
+\end{verbatim}
+
+According to the codes above, preheating parameters are:
+
+
+\begin{itemize}
+
+\item Threshold temperature: 15°C (288.15 K)
+\item Heating rate: 3.0 K/minute
+\item Heating power: 6 kW distributed across all cells
+\item Additional load during charging: 1 kW to maintain temperature
+
+\end{itemize}
+
+Cold Scenario Calculations (when preheating is enabled):
+
+\begin{itemize}
+    \item Temperature rise required: 25°C (from -10°C to 15°C)
+    \item Preheating time: 25 K $\div$ 3 K/min = 8.33 minutes
+    \item Preheating energy: 6 kW $\times$ 8.33 min = 0.833 kWh
+    \item Heating power per cell: 46.15 W (6000 W $\div$ 130 cells)
+\end{itemize}
+
+\subsection{\textbf{Current Control System}}
+\subsubsection{\textbf{The Original Current Control System}}
+
+The baseline current control system from the original MATLAB model implements a simple temperature-dependent charging profile with significant limitations. The original DC Current Profile subsystem uses the following mathematical logic:
+
+\textbf{Input Signal}:
+
+min$\_$T - Minimum temperature from all battery modules [K]
+
+\textbf{Mathematical Implementation}:
+
+\begin{verbatim}
+% Step 1: Linear temperature-based current 
+calculation
+current_raw = (min_T × 1.1296) - 307.22
+
+% Step 2: Modulo operation with
+step_size = 4
+current_mod = mod(min_T, step_size)
+
+% Step 3: Final current calculation
+final_current = max(step_size, min_T -
+current_mod)
+
+\end{verbatim}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\linewidth]{DC_Current_System.png}
+    \caption{Original Simulink's DC Current Control System}
+    \label{fig:placeholder}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\linewidth]{Details_of_Current.png}
+    \caption{Detailed Original Current Control Profile}
+    \label{fig:placeholder}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\linewidth]{Current_Raw.png}
+    \caption{Step 1 - current$\_$raw Calculation}
+    \label{fig:placeholder}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\linewidth]{Mod.png}
+    \caption{Step 2 $\&$ 3 - Modulo Operation and Final Current Calculation}
+    \label{fig:placeholder}
+\end{figure}
+
+\textbf{Performance Analysis of Original System}:
+
+\begin{table}[h]
+\centering
+\caption{Performance Analysis of Original System}
+\scriptsize 
+\setlength{\tabcolsep}{3pt} 
+\renewcommand{\arraystretch}{1.1} 
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+\textbf{Temp [$^\circ$C]} & \textbf{$T$ [K]} & \textbf{Raw [A]} & \textbf{Final [A]} & \textbf{Issue} \\ \hline
+$-10$ & 263.15 & $-10$ & $\sim$4 & Severely too low \\ \hline
+$25$  & 298.15 & $29$  & $\sim$38 & Too low \\ \hline
+$40$  & 313.15 & $47$  & $\sim$47 & Too low \\ \hline
+\end{tabular}
+\end{table}
+
+\textbf{Key Limitations Identified:}
+
+\begin{itemize}
+    \item Severely low currents: 4-47A versus Tesla's actual 200-250A fast charging capability \cite{sawant} \cite{MASTOI202211504}
+    \item Negative currents: The Formula produces negative values in cold weather conditions
+    \item No SOC dependency: Current doesn't reduce as battery approaches full charge
+    \item Linear relationship: Doesn't match realistic Tesla charging curves or C-rate limits
+\end{itemize}
+
+\subsubsection{\textbf{Advanced Current Control Strategy}}
+
+To address the original system's limitations, a new MATLAB function 
+\begin{verbatim}
+realistic_dc_current
+\end{verbatim} was developed and integrated via a manual switch configuration. This enhanced control strategy implements realistic Tesla 4680 charging characteristics based on both temperature and SOC dependencies.
+
+\textbf{Enhanced Input Signals:}
+
+\begin{itemize}
+    \item T$\_$min$\_$K - Minimum temperature from battery modules [K]
+    \item SOC$\_$min - Minimum state of charge across all modules [-] 
+\end{itemize}
+
+\textbf{Advanced Function:}
+
+\begin{verbatim}
+function I_out = realistic_dc_current 
+(T_min_K, SOC_min)
+T_C = T_min_K - 273.15; % Convert to Celsius
+base_A = 250;  % Base current [A]
+
+ % Minimum current protection
+min_current = (T_C < -10) * 2 + 
+(T_C >= -10) * 5;
+
+% Extremely cold temperatures protection
+if T_C < -15  % Only block below -15°C 
+(extreme cold)
+    I_out = min_current;
+    return;
+end
+
+\end{verbatim}
+
+\textbf{Temperature Derating Algorithm:} The advanced system implements aggressive but realistic temperature compensation:
+\begin{verbatim}
+    % Temperature factor calculation
+if T_C < -10
+    temp_factor = 0.03;      
+    % 3% - Extremely limited
+elseif T_C < -5
+    temp_factor = 0.06;      
+    % 6% - Very limited  
+elseif T_C < 0
+    temp_factor = 0.12;      
+    % 12% - Limited
+elseif T_C < 10
+    temp_factor = 0.25;      
+    % 25% - Cool weather
+elseif T_C < 20
+    temp_factor = 0.4;       
+    % 40% - Moderate (preheated conditions)
+elseif T_C < 35
+    temp_factor = 1.0;       
+    % 100% - Optimal range
+elseif T_C < 45
+    temp_factor = 0.9;       
+    % 90% - Slight thermal derating
+else
+    temp_factor = 0.7;       
+    % 70% - High temperature protection
+end
+\end{verbatim}
+
+\textbf{SOC-Dependent Tapering:} The system implements realistic charging curve tapering as battery fills:
+
+\begin{verbatim}
+    % SOC factor calculation
+if SOC_min < 0.1
+    soc_factor = 0.7;        
+    % 70% - Low SOC protection
+elseif SOC_min < 0.3
+    soc_factor = 1.0;        
+    % 100% - Optimal charging range
+elseif SOC_min < 0.6
+    soc_factor = 
+    1.0 - 0.67 x (SOC_min - 0.3);  
+    % Linear reduction
+elseif SOC_min < 0.8
+    soc_factor = 
+    0.8 - 1.33 x (SOC_min - 0.6);  
+    % Steep reduction
+else
+    soc_factor = 0.2;        
+    % 20% - High SOC protection
+end
+\end{verbatim}
+
+\textbf{Final Current Calculation:} 
+
+\begin{verbatim}
+I_out = base_A * temp_factor * soc_factor;
+I_out = max(I_out, min_current); 
+% Ensure minimum current protection
+\end{verbatim}
+
+\textbf{Performance Comparison Analysis}
+\begin{table}[h]
+\centering
+\caption{Temperature Response Characteristics (at T = $25^\circ$C}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\adjustbox{max width=\columnwidth}{
+\begin{tabular}{|c|c|c|c|}
+\hline
+\textbf{Temperature [$^\circ$C]} & \textbf{Original Current [A]} & \textbf{Advanced Current [A]} & \textbf{Current Change [$\%$]} \\
+\hline
+$-15$ & $\sim 0$   & $7.5$   & $\infty$ \\
+$-10$ & $4$        & $15$     & $+275$  \\
+$-5$  & $\sim 15$  & $15$      & $0$ \\
+$0$   & $\sim 25$  & $30$     & $+20$ \\
+$15$  & $\sim 35$  & $100$    & $+186$ \\
+$25$  & $38$       & $250$   & $+558$ \\
+$35$  & $\sim 45$  & $250$   & $+456$ \\
+$45$  & $\sim 47$  & $225$    & $+379$  \\
+\hline
+\end{tabular}
+}
+\end{table}
+
+
+
+\begin{table}[h]
+\centering
+\caption{SOC Tapering Profile (at T = 25$^\circ$C)}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\adjustbox{max width=\columnwidth}{
+\begin{tabular}{|c|c|c|c|}
+\hline
+\textbf{SOC Range} & \textbf{SOC Factor} & \textbf{Current [A]} & \textbf{Charging Strategy} \\
+\hline
+0--10\%   & 0.7         & 175                 & Conservative start \\
+10--30\%  & 1.0         & 250                 & Maximum power \\
+30--60\%  & 1.0$\rightarrow$0.8 & 250$\rightarrow$200 & Linear taper \\
+60--80\%  & 0.8$\rightarrow$0.2 & 200$\rightarrow$50  & Steep reduction \\
+80--100\% & 0.2         & 50                  & Trickle charge \\
+\hline
+\end{tabular}
+}
+\end{table}
+
+
+
+\textbf{Key Enhancement Features:}
+
+\begin{enumerate}
+    \item \textbf{Critical Fast Charging Breakthrough:} At the optimal charging temperature of 25$\circ$C, the advanced control system delivers a 558$\%$ increase in charging current (from 38A to 250A), transforming the system from an academic simulation to a realistic implementation of Tesla 4680 fast charging. This dramatic improvement enables:
+    
+    \begin{itemize}
+        \item \textbf{Realistic fast charging capability:} 250A at ~240V pack voltage $\approx$ 60kW power level. Meanwhile, the original current profile only produces 9.1kW; this does not reflect the realistic fast charging as well. The application of the realistic current profile represents a transformation from slow AC charging speeds to legitimate DC fast charging capability.
+        \item \textbf{Commercial Relevance:}  Current levels appropriate for Tesla 4680 cells (Tesla Supercharger V3 delivers up to 250kW, requiring higher currents at lower pack voltages) \cite{tesla2025charging}
+        \item \textbf{Reduced charging time:} 6.6x higher current translates to significantly faster charging
+        \item \textbf{Thermal management validation:} Realistic currents enable proper thermal system evaluation under authentic load conditions
+    \end{itemize}
+    
+
+    \item \textbf{SOC-Dependent Current Tapering:} The charging profile implements a three-stage tapering strategy:
+    \begin{itemize}
+        \item \textbf{Stage 1 (0-10$\%$ SOC): Conservative Start Protection:} 
+        soc$\_$factor = 0.7 (70$\%$ of base current);
+        Current output: 175A at optimal temperature; 
+        Purpose: Protects deeply discharged cells from thermal shock;
+        Typical of commercial systems that ramp up gradually from very low SOC.
+        \item \textbf {Stage 2 (10-30$\%$ SOC): Maximum Power Phase:} 
+        SOC factor = 1.0 (100$\%$ of base current);
+        Current output: 250A at optimal temperature;
+        Purpose: Maximizes charging speed during the bulk charging phase;
+        Represents the optimal fast charging window where cells can accept maximum current.
+        \item\textbf{Stage 3 (30-80$\%$ SOC): Two-Phase Linear Tapering:} 
+        \begin{itemize}
+            \item \textbf{(30-60$\%$ SOC)}:Gentle reduction
+            \begin{itemize}
+                \item SOC factor: Linear decrease from 1.0 to 0.8
+                \item Reduction rate: 0.67 × (SOC - 0.3)
+                \item Current range: 250A → 200A
+                \item Purpose: Maintains reasonable charging speeds through mid-range SOC
+            \end{itemize}
+            \item \textbf{(60-80$\%$ SOC):} Steep reduction
+            \begin{itemize}
+                \item SOC factor: Linear decrease from 0.8 to 0.2
+                \item Reduction rate: 1.33 × (SOC - 0.6)
+                \item Current range: 200A → 50A
+                \item Purpose: Aggressive tapering to prevent overcharging as cells approach capacity limits
+            \end{itemize}
+            \end{itemize}
+    \item\textbf{Stage 4 (80-100$\%$ SOC): Trickle Charge Protection:}
+            SOC factor = 0.2 (20$\%$ of base current);
+            Current output: 50A at optimal temperature;
+            Purpose: Final charging phase with minimal current to prevent thermal stress;
+            Ensures safe completion to 100$\%$ SOC without cell degradation.
+    \end{itemize}
+
+    \item \textbf{Safety and Operational Limits:} 
+    \begin{itemize}
+        \item \textbf{Absolute minimum current:} 2-5A prevents charging interruption even at extreme temperatures ($-15^\circ$C)
+        \item \textbf{Maximum current limit:}  250A respects Tesla 4680 cell capabilities and thermal constraints
+        \item \textbf{Smooth transitions:} Continuous temperature and SOC functions prevent current discontinuities that could stress the battery
+        \item \textbf{Conservative cold operation:} Aggressive derating (3-12$\%$) protects battery health at low temperatures
+    \end{itemize}
+\end{enumerate}
+
+The implementation of the enhanced current control system elevates the simulation from a purely academic exercise to a commercially relevant fast-charging study. This upgrade enables rigorous evaluation of battery thermal management effectiveness under realistic power levels, assessment of preheating system benefits in actual fast-charging scenarios, and analysis of temperature-dependent impacts on commercial-grade charging performance. Furthermore, it supports the optimization of control strategies for high-power applications. The system’s demonstrated 558$\%$ improvement in current delivery represents a significant advancement in simulation fidelity, providing a robust platform for meaningful investigation into Tesla 4680 fast-charging thermal management strategies at power levels representative of real-world conditions.
+
+
+\section{Results and Discussion}
+Eight charging scenarios were evaluated over a fixed duration of 900s starting from an initial pack SOC of 
+0.20. These scenarios combined three temperature scenarios, cold, normal, and hot, with two current control strategies: the original MATLAB/Simulink current control logic and the proposed realistic DC current profile. For cold conditions, both preheating ON and OFF states were tested. The pack consisted of three modules, and for each run, the minimum and maximum module SOC values were recorded to account for cell-to-cell variability. Temperature safety was evaluated against an upper limit of $60^\circ$C to avoid accelerated aging or thermal runaway risk \cite{tesla2025charging}. This model provides realistic safety recommendations for battery, avoiding high ambient temperature around $60^\circ$C \cite{tesla2025manual}. 
+The simulation results demonstrate significant improvements in fast charging capability across all temperature scenarios when implementing the advanced current control system compared to the original baseline. Figures 9-16 present the comprehensive charging profiles for current, temperature evolution, and flow rate across all tested configurations, while Table X summarizes the 15-minute charging performance.
+
+\begin{table}[h]
+\centering
+\caption{SOC Performance Across Temperature, Control, and Preheating Conditions}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\adjustbox{max width=\columnwidth}{
+\begin{tabular}{|c|c|c|c|c|c|c|}
+\hline
+\textbf{Temp ($^\circ$C)} & \textbf{DC Current Control} & \textbf{Preheating} & \textbf{Max SOC (\%)} & \textbf{Min SOC (\%)} & \textbf{SOC Gain (\%)} & \textbf{Improvement (\%)} \\
+\hline
+-10 & Original & Yes & 22.80 & 22.77 & 2.80  & Baseline \\
+
+-10 & Original & No  & 21.05 & 21.04 & 1.05  & Baseline \\
+-10 & Advanced & Yes & 60.84 & 60.49 & 40.84 & +1357 \\
+-10 & Advanced & No  & 46.57 & 46.34 & 26.57 & +2430 \\
+25  & Original & N/A & 39.60 & 39.43 & 19.60 & Baseline \\
+25  & Advanced & N/A & 86.63 & 86.05 & 66.63 & +240 \\
+40  & Original & N/A & 47.25 & 47.01 & 27.25 & Baseline \\
+40  & Advanced & N/A & 81.99 & 81.45 & 61.99 & +128 \\
+\hline
+\end{tabular}
+}
+\end{table}
+
+The realistic "advanced" DC current profile produced significantly higher SOC gains under all conditions. Table X illustrates the relative improvement factors between the two control strategies for matched temperature conditions. In particular:
+\begin{itemize}
+    \item Cold, preheat OFF: $\Delta$SOC increased from 0.0105 to 0.2657, representing a 25.3× SOC gained in 15 15-minute time frame compared to the original model's DC current profile.
+    \item Cold, preheat ON: $\Delta$SOC increased from 0.0280 to 0.4084, a 14.6× improvement.
+    \item Normal ($25^\circ$C): $\Delta$SOC increased 3.4×, from 0.1960 to 0.6661.
+    \item Hot (40 °C): $\Delta$SOC increased 2.23×, from 0.2725 to 0.6199.
+\end{itemize}
+These results indicate that the original control strategy is overly conservative at low temperatures, severely limiting charge acceptance, whereas the new profile applies a smoother temperature derating curve, enabling substantial charge rate increases without breaching the extreme cold safety cutoff ($\leq$ $-15^\circ$C and $\geq$ $55^\circ$C).
+
+\paragraph {\textbf{Cold Temperature with Preheating and Original Current Control System}}
+
+Figure 9 reveals the severe limitations of the original current control system under cold conditions with preheating. The current profile shows an initial brief spike to approximately 16A at startup, but quickly drops and stabilizes at around 12A throughout the remainder of the 15-minute charging session. This inadequate current delivery results in minimal energy transfer, achieving only 22.8$\%$ maximum SOC and 22.77$\%$ minimum SOC, representing a mere 2.8$\%$ SOC gain from the initial 20$\%$ starting point.
+The temperature evolution demonstrates a concerning pattern where cells start at 288K ($15^\circ$C) due to preheating but actually decline to 284K ($11^\circ$C) during charging, indicating that the low current delivery generates insufficient internal heating to maintain the preheating benefit. The coolant temperature remains constant at 278K ($5^\circ$), showing minimal thermal stress on the cooling system. The flow rate shows an initial activation spike to 0.8 followed by stabilization at 0.6, reflecting the system's attempt to manage thermal conditions despite the poor electrical performance.
+This thermal decline during charging represents a critical failure mode where the preheating energy investment (0.833 kWh for a 25K rise) not only fails to improve charging performance meaningfully but actually cannot be sustained due to inadequate current generation. The 2.8$\%$ SOC gain demonstrates that the original system cannot capitalize on the thermal advantage provided by preheating, making the energy investment economically unjustifiable.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{OG_cold_preheat.png}
+    \caption{Current [A], Temperature [K], Flow rate [-] of battery cell at $-10^\circ$C with Preheating and Original Current Control System }
+    \label{fig:enter-label}
+\end{figure}
+
+\paragraph{\textbf{Cold Temperature without Preheating and Original Current Control System}}
+Figure 10 demonstrates even more severe performance degradation when preheating is disabled, representing near-complete charging system failure. The current profile remains virtually flat at approximately 4A throughout the entire charging session, with no meaningful variation or adaptation to changing thermal conditions. This extremely limited current delivery results in achieving only 21.05$\%$ maximum SOC and 21.04$\%$ minimum SOC, yielding a negligible 1.05$\%$ SOC gain that represents no meaningful energy transfer over the 15-minute charging period.
+The temperature evolution reveals the challenging thermal environment, with cells starting at approximately 268K ($-5^\circ$C), close to the ambient $-10^\circ$C (263K) target, and gradually rising to close to 278K ($5^\circ$C) by the end of charging. This 15K temperature rise, while modest, represents the only benefit from the minimal current flow, demonstrating insufficient internal heating generation to meaningfully improve battery performance. The coolant temperature remains constant at around 278K ($5^\circ$C), indicating minimal thermal stress on the cooling system due to the extremely low power operation.
+The flow rate pattern shows initial activation to 0.8 followed by stabilization around 0.6, reflecting minimal thermal management requirements due to the negligible power levels. The SOC gain of barely 1$\%$ over 15 minutes demonstrates that the original system is essentially non-functional under cold conditions without preheating assistance, making it commercially unusable for real-world cold weather EV operation.
+The contrast between Figures 9 and 10 reveals that even with preheating providing a significant initial thermal advantage (288K vs 268K starting temperatures), the original system only marginally improves from 1.05$\%$ to 2.8$\%$ SOC gain, highlighting the fundamental inadequacy of the baseline current control algorithm in cold weather scenarios.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{OG_cold_no_pre.png}
+    \caption{Current [A], Temperature [K], Flow rate [-] of battery cell at $-10^\circ$C without Preheating and Original Current Control System }
+    \label{fig:enter-label}
+\end{figure}
+
+\paragraph{\textbf{Cold Temperature with Preheating and Advanced Current Control System}}
+Figure 11 showcases the dramatic improvement achieved by the advanced current control system under cold conditions with preheating. The current profile demonstrates sophisticated control, initiating at approximately 100A and exhibiting intelligent linear tapering to 80A by the end of the session, representing a 10-fold improvement over the original system's flat 12A profile. This aggressive current delivery translates to exceptional energy transfer, achieving 60.84$\%$ maximum SOC and 60.49$\%$ minimum SOC, representing a substantial 40.84$\%$ SOC gain.
+The temperature evolution reveals an interesting thermal characteristic where cells start at 288K ($15^\circ$C) due to preheating but gradually decline to 285K ($12^\circ$C) during charging, similar to the pattern observed in Figure 9 but with dramatically different outcomes. Despite this 3K temperature decline, the advanced system's superior current delivery (80-100A vs 12A) generates sufficient energy transfer to achieve meaningful charging progress. The coolant temperature remains constant at 278K ($5^\circ$C), providing stable thermal reference conditions.
+The flow rate pattern shows initial activation to 0.8 followed by stabilization around 0.6, indicating controlled thermal management despite the significantly higher power levels compared to the original system. The key distinction from Figure 9 is that while both systems experience similar thermal decline during cold weather operation, the advanced system's ability to deliver 8-10 times higher current enables the substantial 40.84$\%$ SOC gain compared to the original system's 2.8$\%$ gain.
+This represents a 1,359$\%$ improvement in energy delivery performance, demonstrating that the advanced algorithm can fully capitalize on preheating investment even when facing similar thermal challenges. The higher current delivery generates sufficient internal heating to partially offset the thermal losses while delivering commercially viable charging speeds, validating the effectiveness of combining preheating with advanced current control for cold-weather EV operation.
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{Cold_new_preheat.png}
+    \caption{Current [A], Temperature [K], Flow rate [-] of battery cell at $-10^\circ$C with Preheating and Custom Current Control System }
+    \label{fig:enter-label}
+\end{figure}
+
+\paragraph{\textbf{ Cold Temperature without Preheating and New Current Control System}}
+
+Figure 12 demonstrates the advanced system's remarkable capability to deliver substantial performance even without preheating assistance. The current profile shows an initial startup phase at ~30A, then rapidly increases to approximately 62.5A and exhibits controlled tapering to 55A, representing a 15x improvement over the original system's 4A performance without preheating. This enhanced current delivery achieves 46.57$\%$ maximum SOC and 46.34$\%$ minimum SOC, yielding a 26.57$\%$ SOC gain that represents a 2,430$\%$ improvement over the original system's 1.05$\%$ gain.
+The temperature evolution shows cells starting at 263.5K (-10°C), ambient conditions, and rising effectively to 278K (5°C), indicating a beneficial 15K temperature increase from internal heating generated by the higher current flow. This contrasts favorably with Figure 10, where similar starting temperatures yielded the same final temperature but with negligible energy delivery. The coolant temperature remains constant at 278K (5°C), providing stable thermal reference conditions.
+The flow rate pattern mirrors previous scenarios with initial activation to 0.8 and stabilization around 0.6. The ability to achieve over 26$\%$ SOC gain without any preheating assistance demonstrates the advanced algorithm's superior cold weather capability, making cold weather EV operation commercially viable even without auxiliary heating systems.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{new_cold_no_pre.png}
+    \caption{Current [A], Temperature [K], Flow rate [-] of battery cell at $-10^\circ$C without Preheating and Custom Current Control System }
+    \label{fig:enter-label}
+\end{figure}
+
+\paragraph{\textbf{Normal Temperature - Original Current Control System}}
+Figure 13 demonstrates the original system's inadequate performance even under optimal thermal conditions. The current profile shows characteristic stepping behavior, starting at ~35A, increasing to ~40A, then to ~44A, representing less than 18$\%$ of the Tesla 4680 cell's rated current capability. This conservative current management achieves only 39.6$\%$ maximum SOC and 39.43$\%$ minimum SOC, representing a 19.6$\%$ SOC gain that falls far short of the cell's potential.
+Cell temperatures start at 298K (25°C) and rise to 313K (40°C), indicating a 15K temperature increase that reflects limited internal heating from low current operation. The coolant temperature remains constant at 313K (40°C), with flow rate showing minimal variation around 0.6-0.8, indicating low thermal stress on the cooling system. Despite operating under ideal thermal conditions, the original system delivers less than one-third of the SOC gain achieved by the advanced system (19.6$\%$ vs 66.63$\%$), highlighting the fundamental inadequacy of the baseline current control algorithm.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{Norm_og.png}
+    \caption{Current [A], Temperature [K], Flow rate [-] of battery cell at $25^\circ$C with the Original Current Control System }
+    \label{fig:enter-label}
+\end{figure}
+
+\paragraph{\textbf{Normal Temperature - New Current Control System}}
+Figure 14 presents the optimal performance scenario, demonstrating the advanced system's full capability at normal ambient temperature. The current profile exhibits sophisticated multi-stage tapering, initiating at the full 250A for EV specifications and intelligently reducing through distinct stages (250A → 180A → 120A → 45A) as SOC increases. This optimal current management delivers exceptional energy transfer, achieving 86.63$\%$ maximum SOC and 86.05$\%$ minimum SOC, representing a remarkable 66.63$\%$ SOC gain.
+Cell temperatures start at 298.15K (25°C) and rise to 317K (44°C), representing a controlled 19K temperature increase that remains well within safe operating limits. The coolant temperature maintains 313K (40°C) with flow rate showing responsive stepped activation (0.6 → 0.8 → 0.6), demonstrating effective thermal management despite aggressive charging. The 66.63$\%$ SOC gain demonstrates near-complete charging capability in just 15 minutes, approaching commercial Tesla Supercharger performance levels of "0 to 80$\%$ in 32 minutes" \cite{kane2022report} and representing a 240$\%$ improvement over the original system's 19.6$\%$ gain. This validates the advanced algorithm's commercial viability under optimal operating conditions.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{Norm_new.png}
+    \caption{Current [A], Temperature [K], Flow rate [-] of battery cell at $25^\circ$C with the New Current Control System }
+    \label{fig:enter-label}
+\end{figure}
+
+\paragraph{\textbf{Hot Temperature - Original Current Control System}}
+Figure 15 reveals the original system's poor performance even under hot conditions, where battery internal resistance is naturally lower. The current profile shows characteristic stepping behavior, starting at approximately 44A and gradually increasing to 60A through discrete steps, failing to capitalize on the favorable thermal conditions. This limited current delivery achieves 47.25$\%$ maximum SOC and 47.01$\%$ minimum SOC, yielding a 27.25$\%$ SOC gain that, while better than cold conditions, still represents significant underperformance.
+Cell temperatures start at 313.15K (40°C) and rise to 328.11K (55°C), representing a 15K temperature increase similar to the advanced system but with substantially less energy delivery due to inadequate current levels. The coolant temperature remains constant at 328.15K (55°C), with flow rate showing stepped activation (0.6 → 0.8 → 0.6), reflecting minimal thermal management activity due to low power operation. Despite achieving a similar temperature rise to the advanced system, the energy transfer efficiency remains poor, delivering less than half the SOC gain compared to advanced control under identical thermal conditions.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{hot_og.png}
+    \caption{Current [A], Temperature [K], Flow rate [-] of battery cell at $40^\circ$C with the Original Current Control System }
+    \label{fig:enter-label}
+\end{figure}
+
+\paragraph{\textbf{Hot Temperature - New Current Control System}}
+Figure 16 demonstrates the advanced system's intelligent thermal adaptation under challenging hot ambient conditions. The current profile starts at approximately 225A and exhibits smooth tapering to 95A, showing appropriate derating from the nominal 250A to account for elevated ambient temperature while still maintaining superior performance. This thermally-adapted current management achieves 81.99$\%$ maximum SOC and 81.45$\%$ minimum SOC, representing a substantial 61.99$\%$ SOC gain.
+Cell temperatures start at 313.15K (40°C) and rise to 330K (57°C), representing a 17K increase that approaches but remains safely below critical thermal limits. The peak temperature of 330K (57°C) stays well within the typical 60°C safety threshold for lithium-ion batteries (Tesla), demonstrating effective thermal management under challenging conditions. The coolant temperature maintains 328.15K (55°C) with flow rate showing responsive stepped activation (0.6 → 0.8 → 0.6), indicating active thermal management throughout the session.
+The 61.99$\%$ SOC gain represents a 128$\%$ improvement over the original system's 27.25$\%$ gain, validating the advanced algorithm's effectiveness even under thermally challenging conditions. The intelligent current derating from 250A (normal temp) to 220A (hot temp) demonstrates sophisticated thermal awareness while maintaining commercially viable charging speeds.
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{hot_new.png}
+    \caption{Current [A], Temperature [K], Flow rate [-] of battery cell at $40^\circ$C with the New Current Control System }
+    \label{fig:enter-label}
+\end{figure}
+
+\paragraph{\textbf{Thermal Safety Analysis Across All Scenarios}}
+The comprehensive temperature analysis across Figures 9-16 demonstrates robust thermal safety management under all operating conditions while enabling dramatically improved energy delivery. The most challenging thermal scenario occurs in Figure 16 (hot ambient with advanced charging), where peak cell temperatures reach 330K (57°C), maintaining a critical 3°C safety margin below the typical 60°C lithium-ion thermal limit while achieving 61.99$\%$ SOC gain.
+At normal temperature with maximum charging current (Figure 14), peak temperatures of 317K (44°C) provide a conservative 16°C safety margin while delivering optimal 66.63$\%$ SOC gain. The cold temperature scenarios show excellent thermal safety with maximum temperatures of 288K (15°C) in Figure 11 and 278K (5°C) in Figure 12, ensuring no thermal stress while the advanced system delivers 40.84$\%$ and 26.57$\%$ SOC gains, respectively.
+Notably, both control systems achieve similar peak temperatures under equivalent conditions (Figures 16 vs 15: 330.15K vs 328.15K; Figures 14 vs 13: 317K vs 313K), but the advanced system delivers 128$\%$ and 240$\%$ more energy, respectively, demonstrating superior thermal efficiency. The consistent 2-3K temperature differential between maximum and minimum cells across all scenarios indicates excellent thermal uniformity in the 65s2p pack configuration.
+
+\paragraph{\textbf{SOC Achievement and Energy Delivery Analysis}}
+The SOC results reveal transformative improvements across all temperature conditions. Under optimal conditions (Figure 14), the advanced system achieves 86.63$\%$ SOC from 20$\%$ initial SOC in 15 minutes, representing near-complete fast charging capability that approaches commercial Tesla Supercharger performance. Even under challenging conditions, the advanced system maintains commercially viable performance: 60.84$\%$ SOC with cold weather preheating (Figure 11), 46.57$\%$ SOC in cold conditions without preheating (Figure 12), and 81.99$\%$ SOC under hot conditions (Figure 16).
+In contrast, the original system consistently underperforms across all scenarios, achieving maximum SOC gains ranging from 1.05$\%$ (Figure 10, cold without preheating) to 27.25$\%$ (Figure 15, hot conditions). The performance gap is most pronounced at normal temperature, where the advanced system delivers 66.63$\%$ SOC gain versus the original system's 19.6$\%$ gain (Figures 14 vs 13), representing a 240$\%$ improvement.
+The current delivery analysis reveals the fundamental difference: advanced system currents range from 55-250A across all conditions, while original system currents remain limited to 4-59A, explaining the dramatic SOC performance differences observed.
+
+\paragraph{\textbf{Preheating Energy Return Analysis}}
+Comparing cold weather scenarios demonstrates clear energy economics. With the advanced system (Figures 11 vs 12), preheating improves SOC gain from 26.57$\%$ to 40.84$\%$, representing 14.27 percentage points or approximately 1.82 kWh of additional energy delivery against the 0.833 kWh preheating investment, yielding a positive 2.18:1 energy return ratio. The advanced system's higher current capability (100A vs 62A peak) enables this favorable energy economics.
+Conversely, the original system (Figures 9 vs 10) shows preheating improving SOC gain from only 1.05$\%$ to 2.8$\%$, representing just 1.75 percentage points or 0.22 kWh additional energy delivery, resulting in a negative energy balance that makes preheating economically unjustifiable with the original control algorithm.
+
+\paragraph{\textbf{ Commercial Charging Alignment}}
+Figure 14 demonstrates charging performance that directly aligns with Tesla Supercharger specifications, with 250A peak current and intelligent multi-stage tapering (250A→180A→120A→45A) closely matching commercial fast charging behavior. The achievement of 86.63$\%$ SOC in 15 minutes represents commercially viable charging speeds that address consumer range anxiety concerns.
+The advanced system's ability to deliver over 46$\%$ SOC even in cold conditions without preheating (Figure 12) makes EVs significantly more viable in cold climates, addressing a key barrier to EV adoption in northern markets.
+
+\paragraph{\textbf{System Integration and Control Validation}}
+The flow rate patterns across all figures demonstrate responsive thermal management that maintains safe operating temperatures while enabling dramatic SOC improvements. Consistent flow rate activation patterns (typically 0.6→0.8→0.6) correlate appropriately with temperature rise and current delivery, confirming integrated thermal-electrical control effectiveness.
+The coolant temperature management shows intelligent adaptation: maintaining 278K (5°C) in cold scenarios (Figures 9-12), 313K (40°C) at normal temperature (Figure 14), and 328K (55°C) under hot conditions (Figures 15-16). This demonstrates the cooling system's ability to provide appropriate thermal references across all operating conditions while the advanced current control maximizes energy delivery within thermal constraints.
+Cell-to-cell temperature uniformity (2-3K maximum differential) across all scenarios validates the 65s2p pack thermal design and confirms that the advanced current control system does not create thermal hot spots or imbalances despite aggressive charging profiles.
+
+\section{Conclusion}
+The comprehensive analysis of Figures 9-16 confirms the advanced current control system's transformative impact on Tesla 4680 fast charging performance while maintaining thermal safety across all operating conditions. Key achievements include:
+\begin{itemize}
+    \item Dramatic Performance Improvements: SOC gains ranging from 26.57$\%$ to 66.63$\%$ (advanced system) compared to 1.05$\%$ to 27.25$\%$ (original system), representing 128$\%$ to 2,430$\%$ improvements across all temperature scenarios.
+    \item Thermal Safety Validation: Peak temperatures remain below 330K (57°C) even under the most challenging hot weather scenario (Figure 6), ensuring safe operation with substantial thermal margins while delivering 61.99$\%$ SOC gain.
+    \item Commercial Viability: The 250A peak current capability and intelligent tapering profiles (Figure 14) directly align with Tesla Supercharger specifications, bridging the gap between academic simulation and practical fast charging implementation.
+    \item Cold Weather Breakthrough: The ability to achieve 40.84$\%$ SOC gain with preheating (Figure 11) and 26.57$\%$ without preheating (Figure 12) in -10°C conditions represents a significant advancement for cold climate EV operation.
+    \item Energy Economics Validation: Positive preheating energy return (2.18:1 ratio) with advanced control versus negative economics with original control, providing clear guidance for thermal management system design.
+\end{itemize}
+
+This research establishes a validated framework for commercial Tesla 4680 fast charging implementation that delivers both the aggressive performance improvements required for consumer acceptance and the thermal safety margins essential for commercial deployment. Beyond improving vehicle-level performance, the results highlight the potential of advanced charging algorithms to support large-scale EV deployment. By enabling higher charging power without exceeding thermal safety thresholds, such control strategies can reduce average charging session durations, smooth charging demand profiles, and decrease peak load stress imposed on electricity grids. In cold climates, combining preheating with intelligent current control can unlock commercially viable charging speeds without an excessive energy penalty, improving both user experience and charging infrastructure utilization.
+
+Future work will extend this framework to multi-vehicle charging scenarios, integrate real-time grid demand signals, and evaluate the role of the strategy in the integration and management of renewable energy on the demand side. These developments will further align electric vehicle fast charging with the reliability, efficiency, and sustainability requirements of future low-carbon energy systems.
+
+\subsection{\textbf{Limitations and Future Work}}
+\subsubsection{Limitations}
+While this research demonstrates significant improvements in Tesla 4680 fast charging simulation, several limitations warrant consideration for complete commercial implementation. The current study relies entirely on MATLAB/Simulink simulation using modified MathWorks battery pack models, and although the Tesla 4680-specific parameters were carefully derived, the results require experimental validation using physical Tesla 4680 cells to confirm the thermal and electrical behavior under real-world conditions. The results are also limited to the specific 65s2p configuration tested, and different pack architectures may exhibit different thermal uniformity and electrical performance characteristics that could affect the advanced current control system's effectiveness.
+The thermal modeling approach, while industry-standard, represents a simplified approximation of complex electrochemical processes using a 2-RC equivalent circuit model with temperature-dependent parameters. Advanced multi-physics models incorporating electrolyte transport, solid electrolyte interphase effects, and lithium plating kinetics could provide more accurate predictions, particularly at temperature extremes. Additionally, the current safety assessment focuses primarily on thermal limits without a comprehensive analysis of voltage limits, current density distributions, or mechanical stress factors that could affect battery safety and longevity under aggressive charging conditions.
+The study does not address long-term battery degradation effects from repeated fast charging cycles, leaving the impact of the enhanced 250A charging current on capacity fade, impedance growth, and cycle life unquantified compared to the conservative original algorithm. Furthermore, the analysis assumes unlimited grid power availability and does not consider electrical infrastructure limitations, power quality issues, or grid stability impacts from high-power charging deployment at scale.
+
+\subsubsection{Future  Research Directions}
+Priority should be given to comprehensive experimental validation using physical Tesla 4680 cells, progressing from single-cell testing to validate thermal parameters, through module-level testing to confirm thermal uniformity, to full pack-level validation across all temperature scenarios. A critical consideration for future work involves accounting for pre-charging vehicle operation, as batteries that have been actively used for driving will start charging at elevated temperatures significantly above ambient conditions. This thermal preconditioning from vehicle operation could dramatically alter the charging profiles and safety margins, potentially pushing peak temperatures closer to critical limits and requiring more sophisticated thermal management strategies.
+The enhanced current control algorithm should be extended and validated for other advanced battery chemistries beyond Tesla 4680, including silicon-enhanced anodes, solid-state electrolytes, and alternative cathode materials to establish broader applicability. Future work must also integrate advanced Battery Management System considerations that go beyond simple current control, including real-time cell balancing, fault detection algorithms, and predictive health monitoring that can adapt charging profiles based on individual cell conditions and overall pack health status.
+Comprehensive aging studies comparing the advanced versus original current control systems are essential for commercial viability, requiring accelerated aging protocols, capacity fade analysis, and post-mortem analysis to quantify the longevity impact of aggressive charging profiles. Economic considerations represent another critical area, as the higher power charging demands increased electricity costs, and the economic viability depends on electricity pricing structures, demand charges, and time-of-use rates that vary significantly across markets. The cost-benefit analysis must balance faster charging convenience against higher energy costs and potential battery replacement expenses from accelerated degradation.
+Safety system integration requires significant advancement, particularly in coolant system design for fire hazard protection and emergency response. Future research must develop enhanced cooling systems capable of rapid heat extraction during thermal events, including emergency cooling protocols and fire suppression integration. Critical safety features include advanced warning systems and automated breakers that can detect excessive battery heating and immediately terminate charging before reaching dangerous temperature thresholds. These systems must integrate with vehicle-level safety networks to provide multiple layers of protection and ensure safe operation even under fault conditions.
+The development of machine learning-enhanced current control algorithms represents another promising direction, enabling adaptation to real-time battery health monitoring, environmental conditions, and user charging patterns. These algorithms should optimize charging profiles based on battery state-of-health, ambient conditions, grid constraints, and economic factors to provide truly intelligent charging management. Grid integration analysis remains essential for widespread deployment, requiring a comprehensive study of infrastructure requirements, power quality considerations, energy storage integration, and demand response strategies to enable the enhanced charging system without destabilizing electrical networks.
+Real-world validation across diverse operational scenarios will ultimately determine commercial viability, requiring field testing that accounts for varying climate conditions, driving patterns, and charging behaviors to validate simulation predictions and identify practical implementation challenges not captured in controlled laboratory conditions.
+
+\subsubsection{ Commercial Implementation Pathway}
+
+The transition from simulation to commercial deployment should follow a systematic phased approach, beginning with laboratory validation using Tesla 4680 cells under controlled conditions to verify the simulation predictions. This would be followed by prototype vehicle testing to assess system integration challenges and real-world performance characteristics. Limited field trials with fleet operators would provide operational data across diverse usage patterns and environmental conditions, allowing refinement of the control algorithms and identification of practical implementation challenges not captured in laboratory settings.
+The final phase would involve a gradual commercial rollout with comprehensive monitoring systems to track performance, safety, and longevity metrics across large-scale deployment. Each phase should incorporate lessons learned and safety validations to ensure robust commercial implementation of the enhanced fast charging capability demonstrated in this research. This systematic approach would minimize risks while maximizing the potential for successful commercial deployment of the advanced current control system, ultimately delivering the dramatic improvements in fast charging performance validated through this simulation study to real-world EV applications.
+
+
+\section*{Acknowledgment}
+The author would like to express sincere gratitude to EVNHCMC (Vietnam Power Corporation - Ho Chi Minh City) for providing the inspirational environment and practical insights that motivated this research into an advanced model of battery fast charging systems. The exposure to real-world electricity infrastructure challenges, battery management systems, and energy management practices during my summer internship provided an invaluable perspective on the practical implications of battery charging optimization.
+The author also expresses his appreciation to Grinnell College for fostering the analytical thinking and research methodologies that enabled this investigation. The interdisciplinary approach to problem-solving and emphasis on independent research cultivated during his academic experience provided the foundation for tackling this complex electrochemical engineering challenge.
+Special recognition is due to the open source community and authors whose contributions made this research possible. Particular thanks to the MathWorks development team for the original Battery Pack DC Fast Charging example that served as the foundation for this work, and to the broader open-source scientific computing community whose tools, libraries, and shared knowledge enabled the development of the advanced current control algorithms presented in this study. The collaborative spirit of open source development continues to accelerate scientific progress and innovation in critical fields such as sustainable energy storage.
+It is important to note that this research represents the author's personal, independent work conducted during his summer internship period at EVNHCMC. While inspired by the industry exposure, academic background from both institutions, and built upon open source foundations, the research design, Tesla 4680-specific parameter adaptation, advanced current control algorithm development, simulation implementation, analysis, and conclusions presented in this paper are entirely the author's own contribution to the field of battery fast charging optimization.
+
+\bibliographystyle{IEEEtran}
+\bibliography{Sources.bib}
+\end{document}
