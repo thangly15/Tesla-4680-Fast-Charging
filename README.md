@@ -6,13 +6,14 @@
 
 ## Overview
 
-This repository contains the simulation code and results for our research on enhanced current control and preheating systems for Tesla 4680 battery fast charging.
+This repository contains the simulation framework and results for enhanced current control and preheating systems for Tesla 4680 battery fast charging. My research demonstrates 240-2430% improvement in charging performance across temperature ranges while maintaining thermal safety margins.
 
-**Key Results:**
-- 240-2430% improvement in charging performance across temperature ranges
-- Safe operation maintained (peak temperatures <57°C) 
-- Positive energy return (2.18:1) for preheating in cold conditions
-- Commercial-grade performance matching Tesla Supercharger specifications
+**Key Achievements:**
+- Commercial-grade performance: 250A peak current matching Tesla Supercharger specifications
+- Multi-temperature validation: Safe operation from -10°C to 40°C
+- Thermal safety: Peak temperatures maintained below 57°C in all scenarios
+- Energy efficiency: 2.18:1 positive return on preheating energy investment
+- Cold weather breakthrough: 40.8% SOC gain with preheating, 26.6% without preheating at -10°C
 
 ## Paper
 
