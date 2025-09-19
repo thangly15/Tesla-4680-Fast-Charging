@@ -92,6 +92,7 @@ Comprehensive results summary available in [`src/data/`](src/data/):
 ### Running the Simulation
 Download the MATLAB file from [Matlab](src/matlab/Tesla4680_three_cases_Scenario_test.m)
 
-## Status
+### Full PDF Paper and Results
+Download the PDF of the paper from [`src/Tesla 4680 battery control paper.pdf`](src/Tesla_4680_battery_control_paper.pdf)
 
-🚧 **Repository under development** - Code and documentation being added
+
