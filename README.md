@@ -96,4 +96,16 @@ Download the MATLAB file from [Matlab](src/matlab/Tesla4680_three_cases_Scenario
 ### Full PDF Paper and Results
 Download the PDF of the paper from [`src/Tesla 4680 battery control paper.pdf`](src/Tesla_4680_battery_control_paper.pdf)
 
+###Contact
+**Thang Quoc Ly**
 
+- Email: lytimmy@grinnell.edu, timmythang15@gmail.com
+- Institution: Grinnell College, Department of Physics
+- GitHub: @thangly15
+
+###Roadmap
+- Experimental validation with physical Tesla 4680 cells
+- Extension to other battery chemistries
+- Integration with real-time grid demand signals
+- Machine learning-enhanced control algorithms
+- Multi-vehicle charging scenario analysis
