@@ -1,0 +1,64 @@
+function I_out = realistic_dc_current (T_min_K, SOC_min)
+    T_C = T_min_K - 273.15; % Convert to Celsius
+    base_A = 250; % Base current [A]
+
+% Minimum current protection
+    min_current = (T_C < -10) * 2 + (T_C >= -10) * 5;
+
+% Extremely cold temperatures protection if T_C < -15 % Only block below -15°C (extreme cold)
+    I_out = min_current;
+    return;
+end
+
+
+% Temperature factor calculation
+    if T_C < -10
+    temp_factor = 0.03;
+% 3% - Extremely limited
+    elseif T_C < -5
+    temp_factor = 0.06;
+% 6% - Very limited
+    elseif T_C < 0
+    temp_factor = 0.12;
+% 12% - Limited
+    elseif T_C < 10
+    temp_factor = 0.25;
+% 25% - Cool weather
+    elseif T_C < 20
+    temp_factor = 0.4;
+% 40% - Moderate (preheated conditions)
+    elseif T_C < 35
+    temp_factor = 1.0;
+% 100% - Optimal range
+    elseif T_C < 45
+    temp_factor = 0.9;
+% 90% - Slight thermal derating
+    else
+    temp_factor = 0.7;
+% 70% - High temperature protection
+    end
+
+SOC-Dependent Tapering: The system implements realis-
+tic charging curve tapering as battery fills:
+% SOC factor calculation
+    if SOC_min < 0.1
+    soc_factor = 0.7;
+% 70% - Low SOC protection
+    elseif SOC_min < 0.3
+    soc_factor = 1.0;
+% 100% - Optimal charging range
+    elseif SOC_min < 0.6
+    soc_factor = 1.0 - 0.67 x (SOC_min - 0.3);
+% Linear reduction
+    elseif SOC_min < 0.8
+    soc_factor = 0.8 - 1.33 x (SOC_min - 0.6);
+% Steep reduction
+    else
+    soc_factor = 0.2;
+% 20% - High SOC protection
+    end
+
+Final Current Calculation:
+    I_out = base_A * temp_factor * soc_factor;
+    I_out = max(I_out, min_current);
+% Ensure minimum current protection
