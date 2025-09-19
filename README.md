@@ -1,5 +1,7 @@
 # Tesla 4680 Battery Fast Charging: Enhanced Current Control System
 
+[![EngrXiv](https://img.shields.io/badge/EngrXiv-Published-blue.svg)](https://doi.org/10.31224/5415)
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Overview
@@ -16,8 +18,7 @@ This repository contains the simulation code and results for our research on enh
 
 **"Enhanced Current Control and Preheating System for Tesla 4680 Battery Fast Charging: Multi-Temperature Performance Analysis and Energy Efficiency Validation"**
 
-- **Preprint:** arXiv:XXXX.XXXXX (coming soon)
-- **Journal:** Submitted to IEEE Transactions on Transportation Electrification
+- **Preprint:** EngrXiV: (https://doi.org/10.31224/5415) 
 - **Authors:** [Thang Quoc Ly]
 
 ## Research Highlights
