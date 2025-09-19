@@ -60,6 +60,8 @@ See comprehensive analysis figures in [`figures/`](figures/) directory:
 ## Source Code
 
 The complete simulation is available in [`src/matlab/`](src/matlab/):
+- **Matlab test case for the battery system**: [`src/matlab/Tesla4680_three_cases_Scenario_test.m`](src/matlab/Tesla4680_three_cases_Scenario_test.m)
+- **Function Block Code for current control logic of the battery in Simulink:** [`src/matlab/Current Control Logic`](src/matlab/Current Control Logic) 
 
 ## Research Data
 
